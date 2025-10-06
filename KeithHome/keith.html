@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keith Home - Secure File Storage</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.6/dist/sweetalert2.min.css">
+  <style id="app-style">
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+      transition: background-color 0.3s;
+    }
+    
+    .file-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .file-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .thumbnail {
+      height: 150px;
+      object-fit: cover;
+      background-color: #f3f4f6;
+    }
+    
+    .loader {
+      border-top-color: #3b82f6;
+      animation: spinner 0.6s linear infinite;
+    }
+    
+    @keyframes spinner {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .theme-blue {
+      --primary-color: #3b82f6;
+      --secondary-color: #93c5fd;
+      --accent-color: #2563eb;
+    }
+    
+    .theme-green {
+      --primary-color: #10b981;
+      --secondary-color: #6ee7b7;
+      --accent-color: #059669;
+    }
+    
+    .theme-purple {
+      --primary-color: #8b5cf6;
+      --secondary-color: #c4b5fd;
+      --accent-color: #7c3aed;
+    }
+    
+    .theme-orange {
+      --primary-color: #f97316;
+      --secondary-color: #fdba74;
+      --accent-color: #ea580c;
+    }
+    
+    .theme-button {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .theme-button:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body class="theme-blue">
+  <div id="app" class="min-h-screen flex flex-col">
+    <!-- Login Screen -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 p-4">
+      <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md">
+        <div class="text-center mb-8">
+          <img src="images/keith1.jpg" alt="Keith Home" class="mx-auto mb-4 rounded-full shadow-lg" style="width:120px; height:120px; object-fit:cover;">
+          <h1 class="text-3xl font-bold text-gray-800">Keith Home</h1>
+          <p class="text-gray-600 mt-2">Secure Personal File Storage</p>
+        </div>
+        
+        <form id="login-form" class="space-y-6">
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+            <input type="text" id="username" name="username" required class="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+          
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+            <input type="password" id="password" name="password" required class="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+          
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+              <label for="remember-me" class="ml-2 block text-sm text-gray-700">Remember me</label>
+            </div>
+            
+            <a href="javascript:void(0)" class="text-sm font-medium text-blue-600 hover:text-blue-500" id="forgot-password-link">Forgot password?</a>
+          </div>
+          
+          <div>
+            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Sign in</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Main Application -->
+    <div id="main-app" class="hidden flex-grow flex flex-col">
+      <!-- Header -->
+      <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <h1 class="text-xl font-bold text-gray-800">Keith Home</h1>
+          </div>
+          
+          <div class="flex items-center space-x-6">
+            <div class="relative" id="theme-dropdown">
+              <button id="theme-button" class="flex items-center text-gray-600 hover:text-gray-800">
+                <i class="fas fa-palette"></i>
+                <span class="ml-2 hidden sm:inline">Theme</span>
+              </button>
+              <div id="theme-menu" class="hidden absolute right-0 mt-2 py-2 w-40 bg-white rounded-md shadow-xl z-20">
+                <div class="px-4 py-2 flex items-center space-x-2">
+                  <span class="theme-button bg-blue-500" data-theme="blue"></span>
+                  <span class="theme-button bg-green-500" data-theme="green"></span>
+                  <span class="theme-button bg-purple-500" data-theme="purple"></span>
+                  <span class="theme-button bg-orange-500" data-theme="orange"></span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+              <span class="text-sm text-gray-700" id="user-name">User</span>
+              <button id="logout-button" class="text-sm text-red-600 hover:text-red-800">
+                <i class="fas fa-sign-out-alt mr-1"></i>
+                <span class="hidden sm:inline">Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      <!-- Navigation Tabs -->
+      <div class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex space-x-8 overflow-x-auto">
+            <button id="files-tab" class="py-4 px-1 text-center text-sm font-medium border-b-2 border-blue-500 text-blue-600 whitespace-nowrap">
+              My Files
+            </button>
+            <button id="admin-tab" class="py-4 px-1 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap hidden">
+              User Admin
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Main Content Area -->
+      <main class="flex-grow">
+        <!-- My Files Panel -->
+        <div id="files-panel" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <!-- Search and Upload Controls -->
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="relative rounded-md shadow-sm max-w-md w-full">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+              </div>
+              <input type="text" id="search-files" class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2" placeholder="Search files...">
+            </div>
+            
+            <button id="upload-button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <i class="fas fa-cloud-upload-alt mr-2"></i> Upload Files
+            </button>
+          </div>
+          
+          <!-- Upload Drop Zone (hidden initially) -->
+          <div id="upload-zone" class="hidden mb-8 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <div class="space-y-2">
+              <i class="fas fa-cloud-upload-alt text-4xl text-gray-400"></i>
+              <h3 class="text-lg font-medium text-gray-900">Drag files here or click to upload</h3>
+              <p class="text-sm text-gray-500">Your files will be encrypted before upload</p>
+              <input type="file" id="file-input" multiple class="hidden">
+              <button id="browse-files" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Browse Files
+              </button>
+            </div>
+          </div>
+          
+          <!-- File Categories -->
+          <div class="mb-6 border-b border-gray-200">
+            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center">
+              <li class="mr-2">
+                <button class="file-category-btn inline-block p-4 border-b-2 border-blue-600 rounded-t-lg text-blue-600 active" data-category="all">All Files</button>
+              </li>
+              <li class="mr-2">
+                <button class="file-category-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300" data-category="images">Images</button>
+              </li>
+              <li class="mr-2">
+                <button class="file-category-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300" data-category="videos">Videos</button>
+              </li>
+              <li class="mr-2">
+                <button class="file-category-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300" data-category="documents">Documents</button>
+              </li>
+            </ul>
+          </div>
+          
+          <!-- Files Grid Display -->
+          <div id="files-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Files will be populated here -->
+            <div class="text-center py-10 text-gray-500">
+              <i class="fas fa-lock text-5xl mb-4"></i>
+              <h3 class="text-lg font-medium">Enter your master password to view files</h3>
+              <p class="mt-2">Your files are securely encrypted</p>
+            </div>
+          </div>
+          
+          <!-- Files Table Display (for documents) -->
+          <div id="files-table" class="hidden overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Filename</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <!-- Document files will be populated here -->
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Pagination -->
+          <div class="mt-6 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+            <div class="flex flex-1 justify-between sm:hidden">
+              <button class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</button>
+              <button class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</button>
+            </div>
+            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Showing
+                  <span class="font-medium">1</span>
+                  to
+                  <span class="font-medium">10</span>
+                  of
+                  <span class="font-medium">20</span>
+                  results
+                </p>
+              </div>
+              <div>
+                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                    <span class="sr-only">Previous</span>
+                    <i class="fas fa-chevron-left h-5 w-5"></i>
+                  </button>
+                  <button aria-current="page" class="relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">1</button>
+                  <button class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">2</button>
+                  <button class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                    <span class="sr-only">Next</span>
+                    <i class="fas fa-chevron-right h-5 w-5"></i>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- User Admin Panel -->
+        <div id="admin-panel" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden">
+          <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6">
+              <h2 class="text-lg leading-6 font-medium text-gray-900">User Management</h2>
+              <p class="mt-1 max-w-2xl text-sm text-gray-500">Add, edit, or remove users with access to Keith Home.</p>
+            </div>
+            
+            <!-- Add User Form -->
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+              <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Add New User</h3>
+              <form id="add-user-form" class="grid grid-cols-1 gap-y-6 sm:grid-cols-6 sm:gap-x-4">
+                <div class="sm:col-span-2">
+                  <label for="new-username" class="block text-sm font-medium text-gray-700">Username</label>
+                  <input type="text" name="new-username" id="new-username" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                
+                <div class="sm:col-span-2">
+                  <label for="new-password" class="block text-sm font-medium text-gray-700">Password</label>
+                  <input type="password" name="new-password" id="new-password" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                
+                <div class="sm:col-span-1">
+                  <label for="new-role" class="block text-sm font-medium text-gray-700">Role</label>
+                  <select id="new-role" name="new-role" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                
+                <div class="sm:col-span-1 flex items-end">
+                  <button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Add User
+                  </button>
+                </div>
+              </form>
+            </div>
+            
+            <!-- User List -->
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+              <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Existing Users</h3>
+              <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-list" class="bg-white divide-y divide-gray-200">
+                    <!-- User rows will be populated here -->
+                    <tr>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">keith</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Admin</span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        Just now
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span class="text-gray-400">Current User</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <!-- Modals -->
+  
+  <!-- Master Password Modal -->
+  <div id="master-password-modal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+              <i class="fas fa-key text-blue-600"></i>
+            </div>
+            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+              <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                Enter Master Password
+              </h3>
+              <div class="mt-2">
+                <p class="text-sm text-gray-500">
+                  Enter your master password to decrypt and access your files. This password is not stored on the server.
+                </p>
+                <input type="password" id="master-password" class="mt-4 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="Master password">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <button type="button" id="unlock-files-btn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+            Unlock Files
+          </button>
+          <button type="button" id="cancel-master-password" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- File Actions Modal -->
+  <div id="file-actions-modal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+              <i class="fas fa-file text-blue-600"></i>
+            </div>
+            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+              <h3 class="text-lg leading-6 font-medium text-gray-900" id="file-action-title">
+                File Actions
+              </h3>
+              <div class="mt-2">
+                <p class="text-sm text-gray-500" id="file-action-description">
+                  Manage your file
+                </p>
+                <div id="rename-file-container" class="mt-4 hidden">
+                  <label for="new-filename" class="block text-sm font-medium text-gray-700">New filename</label>
+                  <input type="text" id="new-filename" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div id="delete-file-container" class="mt-4 hidden">
+                  <p class="text-sm text-gray-500">Are you sure you want to delete this file? This action cannot be undone.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <button type="button" id="confirm-file-action" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+            Confirm
+          </button>
+          <button type="button" id="cancel-file-action" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.6/dist/sweetalert2.all.min.js"></script>
+  
+  <script id="app-script">
+    // App State
+    const appState = {
+      loggedIn: false,
+      isAdmin: false,
+      username: '',
+      masterPasswordProvided: false,
+      filesList: [],
+      currentCategory: 'all',
+      currentPage: 1,
+      itemsPerPage: 12,
+      theme: 'blue',
+      currentFileAction: null,
+      currentFileId: null
+    };
+    
+    // DOM Elements
+    const elements = {
+      loginScreen: document.getElementById('login-screen'),
+      loginForm: document.getElementById('login-form'),
+      mainApp: document.getElementById('main-app'),
+      filesTab: document.getElementById('files-tab'),
+      adminTab: document.getElementById('admin-tab'),
+      filesPanel: document.getElementById('files-panel'),
+      adminPanel: document.getElementById('admin-panel'),
+      uploadButton: document.getElementById('upload-button'),
+      uploadZone: document.getElementById('upload-zone'),
+      fileInput: document.getElementById('file-input'),
+      browseFiles: document.getElementById('browse-files'),
+      searchFiles: document.getElementById('search-files'),
+      filesGrid: document.getElementById('files-grid'),
+      filesTable: document.getElementById('files-table'),
+      fileCategoryBtns: document.querySelectorAll('.file-category-btn'),
+      masterPasswordModal: document.getElementById('master-password-modal'),
+      masterPassword: document.getElementById('master-password'),
+      unlockFilesBtn: document.getElementById('unlock-files-btn'),
+      cancelMasterPassword: document.getElementById('cancel-master-password'),
+      fileActionsModal: document.getElementById('file-actions-modal'),
+      fileActionTitle: document.getElementById('file-action-title'),
+      fileActionDescription: document.getElementById('file-action-description'),
+      renameFileContainer: document.getElementById('rename-file-container'),
+      deleteFileContainer: document.getElementById('delete-file-container'),
+      newFilename: document.getElementById('new-filename'),
+      confirmFileAction: document.getElementById('confirm-file-action'),
+      cancelFileAction: document.getElementById('cancel-file-action'),
+      userList: document.getElementById('user-list'),
+      addUserForm: document.getElementById('add-user-form'),
+      userName: document.getElementById('user-name'),
+      logoutButton: document.getElementById('logout-button'),
+      themeButton: document.getElementById('theme-button'),
+      themeMenu: document.getElementById('theme-menu'),
+      themeButtons: document.querySelectorAll('.theme-button')
+    };
+    
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', () => {
+      initEventListeners();
+    });
+    
+    // Event Listeners
+    function initEventListeners() {
+      // Login Form
+      elements.loginForm.addEventListener('submit', handleLogin);
+      
+      // Navigation
+      elements.filesTab.addEventListener('click', () => switchPanel('files'));
+      elements.adminTab.addEventListener('click', () => switchPanel('admin'));
+      
+      // Upload
+      elements.uploadButton.addEventListener('click', toggleUploadZone);
+      elements.browseFiles.addEventListener('click', () => elements.fileInput.click());
+      elements.fileInput.addEventListener('change', handleFileSelection);
+      
+      // Drop zone events
+      elements.uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        elements.uploadZone.classList.add('border-blue-500');
+        elements.uploadZone.classList.add('bg-blue-50');
+      });
+      
+      elements.uploadZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        elements.uploadZone.classList.remove('border-blue-500');
+        elements.uploadZone.classList.remove('bg-blue-50');
+      });
+      
+      elements.uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        elements.uploadZone.classList.remove('border-blue-500');
+        elements.uploadZone.classList.remove('bg-blue-50');
+        
+        if (e.dataTransfer.files.length > 0) {
+          handleFileUpload(e.dataTransfer.files);
+        }
+      });
+      
+      // File categories
+      elements.fileCategoryBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          elements.fileCategoryBtns.forEach(b => b.classList.remove('border-blue-600', 'text-blue-600'));
+          elements.fileCategoryBtns.forEach(b => b.classList.add('border-transparent', 'text-gray-500'));
+          btn.classList.remove('border-transparent', 'text-gray-500');
+          btn.classList.add('border-blue-600', 'text-blue-600');
+          
+          appState.currentCategory = btn.dataset.category;
+          if (appState.masterPasswordProvided) {
+            loadFiles();
+          }
+        });
+      });
+      
+      // Search
+      elements.searchFiles.addEventListener('input', debounce(() => {
+        if (appState.masterPasswordProvided) {
+          loadFiles();
+        }
+      }, 300));
+      
+      // Master Password Modal
+      elements.unlockFilesBtn.addEventListener('click', unlockFiles);
+      elements.cancelMasterPassword.addEventListener('click', () => {
+        elements.masterPasswordModal.classList.add('hidden');
+      });
+      
+      // File Actions Modal
+      elements.confirmFileAction.addEventListener('click', confirmFileAction);
+      elements.cancelFileAction.addEventListener('click', () => {
+        elements.fileActionsModal.classList.add('hidden');
+      });
+      
+      // Add User Form
+      elements.addUserForm.addEventListener('submit', handleAddUser);
+      
+      // Logout
+      elements.logoutButton.addEventListener('click', handleLogout);
+      
+      // Theme
+      elements.themeButton.addEventListener('click', toggleThemeMenu);
+      elements.themeButtons.forEach(btn => {
+        btn.addEventListener('click', () => changeTheme(btn.dataset.theme));
+      });
+      
+      // Click outside to close theme menu
+      document.addEventListener('click', (e) => {
+        if (!elements.themeButton.contains(e.target) && !elements.themeMenu.contains(e.target)) {
+          elements.themeMenu.classList.add('hidden');
+        }
+      });
+    }
+    
+    // Login Handler
+    function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      // This is a prototype, so we'll just simulate a login
+      if (username && password) {
+        // Simulate API call
+        setTimeout(() => {
+          appState.loggedIn = true;
+          appState.username = username;
+          
+          // Set admin status (for demo we'll make 'admin' username an admin)
+          appState.isAdmin = username.toLowerCase() === 'admin';
+          
+          // Update UI based on login
+          elements.loginScreen.classList.add('hidden');
+          elements.mainApp.classList.remove('hidden');
+          elements.mainApp.classList.add('flex');
+          elements.userName.textContent = username;
+          
+          // Show admin tab if user is admin
+          if (appState.isAdmin) {
+            elements.adminTab.classList.remove('hidden');
+          }
+          
+          // Show master password modal
+          elements.masterPasswordModal.classList.remove('hidden');
+        }, 1000);
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Login Failed',
+          text: 'Please enter both username and password',
+          confirmButtonColor: '#3b82f6'
+        });
+      }
+    }
+    
+    // Unlock Files
+    function unlockFiles() {
+      const masterPassword = elements.masterPassword.value;
+      
+      if (!masterPassword) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Master password is required',
+          confirmButtonColor: '#3b82f6'
+        });
+        return;
+      }
+      
+      // In a real app, this would verify the master password can decrypt a test file
+      // Here we just simulate success
+      appState.masterPasswordProvided = true;
+      elements.masterPasswordModal.classList.add('hidden');
+      
+      // Load files
+      loadFiles();
+    }
+    
+    // Load Files
+    function loadFiles() {
+      // Show loading state
+      elements.filesGrid.innerHTML = `
+        <div class="col-span-full flex justify-center items-center py-12">
+          <div class="loader h-12 w-12 rounded-full border-4 border-gray-200"></div>
+        </div>
+      `;
+      
+      // In a real app, this would make an API call to get files
+      // For the prototype, we'll simulate some demo files
+      setTimeout(() => {
+        const demoFiles = generateDemoFiles();
+        const searchTerm = elements.searchFiles.value.toLowerCase();
+        
+        // Filter by category and search term
+        const filteredFiles = demoFiles.filter(file => {
+          const categoryMatch = appState.currentCategory === 'all' || file.type === appState.currentCategory;
+          const searchMatch = !searchTerm || file.name.toLowerCase().includes(searchTerm);
+          return categoryMatch && searchMatch;
+        });
+        
+        appState.filesList = filteredFiles;
+        
+        if (filteredFiles.length === 0) {
+          elements.filesGrid.innerHTML = `
+            <div class="col-span-full text-center py-10">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              </svg>
+              <h3 class="mt-2 text-sm font-medium text-gray-900">No files found</h3>
+              <p class="mt-1 text-sm text-gray-500">Get started by uploading a new file.</p>
+              <div class="mt-6">
+                <button type="button" id="no-files-upload" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                  <i class="fas fa-upload -ml-1 mr-2"></i>
+                  Upload files
+                </button>
+              </div>
+            </div>
+          `;
+          
+          document.getElementById('no-files-upload').addEventListener('click', toggleUploadZone);
+        } else {
+          renderFiles(filteredFiles);
+        }
+      }, 1000);
+    }
+    
+    // Generate demo files for prototype
+    function generateDemoFiles() {
+      return [
+        { id: 1, name: 'vacation_photo.jpg', type: 'images', size: '2.3 MB', date: '2025-03-15', thumbnail: 'https://cdn.pixabay.com/photo/2017/01/20/00/30/maldives-1993704_960_720.jpg' },
+        { id: 2, name: 'project_presentation.pdf', type: 'documents', size: '1.7 MB', date: '2025-03-10', thumbnail: null },
+        { id: 3, name: 'family_video.mp4', type: 'videos', size: '18.2 MB', date: '2025-02-28', thumbnail: 'https://cdn.pixabay.com/photo/2016/11/29/09/32/blur-1868530_960_720.jpg' },
+        { id: 4, name: 'resume_updated.docx', type: 'documents', size: '342 KB', date: '2025-03-05', thumbnail: null },
+        { id: 5, name: 'mountain_trip.jpg', type: 'images', size: '1.8 MB', date: '2025-01-20', thumbnail: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_960_720.jpg' },
+        { id: 6, name: 'budget_2025.xlsx', type: 'documents', size: '958 KB', date: '2025-01-02', thumbnail: null },
+        { id: 7, name: 'birthday_party.mp4', type: 'videos', size: '34.1 MB', date: '2024-12-15', thumbnail: 'https://cdn.pixabay.com/photo/2018/01/14/23/12/nature-3082832_960_720.jpg' },
+        { id: 8, name: 'sunset_beach.jpg', type: 'images', size: '3.4 MB', date: '2024-11-30', thumbnail: 'https://cdn.pixabay.com/photo/2018/08/14/13/23/ocean-3605547_960_720.jpg' },
+        { id: 9, name: 'task_list.txt', type: 'documents', size: '12 KB', date: '2025-03-01', thumbnail: null }
+      ];
+    }
+    
+    // Render Files in Grid or Table
+    function renderFiles(files) {
+      if (appState.currentCategory === 'documents') {
+        // Show table view for documents
+        elements.filesGrid.classList.add('hidden');
+        elements.filesTable.classList.remove('hidden');
+        
+        const tbody = elements.filesTable.querySelector('tbody');
+        tbody.innerHTML = '';
+        
+        files.forEach(file => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <i class="fas fa-file-alt text-gray-500 mr-3"></i>
+                <div class="text-sm font-medium text-gray-900">${file.name}</div>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-500">${file.size}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-500">${file.date}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <div class="flex space-x-2">
+                <button class="text-blue-600 hover:text-blue-900 download-btn" data-id="${file.id}">
+                  <i class="fas fa-download"></i>
+                </button>
+                <button class="text-gray-600 hover:text-gray-900 rename-btn" data-id="${file.id}">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${file.id}">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          `;
+          
+          tbody.appendChild(row);
+        });
+        
+        // Add event listeners
+        document.querySelectorAll('.download-btn').forEach(btn => {
+          btn.addEventListener('click', () => downloadFile(btn.dataset.id));
+        });
+        
+        document.querySelectorAll('.rename-btn').forEach(btn => {
+          btn.addEventListener('click', () => showRenameModal(btn.dataset.id));
+        });
+        
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', () => showDeleteModal(btn.dataset.id));
+        });
+        
+      } else {
+        // Show grid view for images and videos
+        elements.filesTable.classList.add('hidden');
+        elements.filesGrid.classList.remove('hidden');
+        
+        elements.filesGrid.innerHTML = '';
+        
+        files.forEach(file => {
+          const fileCard = document.createElement('div');
+          fileCard.className = 'file-card bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md';
+          
+          if (file.type === 'images' || file.type === 'videos') {
+            const thumbnailUrl = file.thumbnail || 'https://cdn.pixabay.com/photo/2016/03/26/22/21/icons-1281840_960_720.jpg';
+            const videoOverlay = file.type === 'videos' ? `<div class="absolute inset-0 flex items-center justify-center">
+              <div class="bg-black bg-opacity-60 rounded-full p-3">
+                <i class="fas fa-play text-white"></i>
+              </div>
+            </div>` : '';
+            
+            fileCard.innerHTML = `
+              <div class="relative">
+                <img src="${thumbnailUrl}" alt="${file.name}" class="thumbnail w-full">
+                ${videoOverlay}
+              </div>
+              <div class="p-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-medium text-gray-900 truncate" title="${file.name}">${file.name}</h3>
+                </div>
+                <div class="mt-2 flex items-center justify-between">
+                  <div class="text-xs text-gray-500">${file.size} • ${file.date}</div>
+                  <div class="flex space-x-2">
+                    <button class="text-blue-600 hover:text-blue-900 download-btn" data-id="${file.id}">
+                      <i class="fas fa-download"></i>
+                    </button>
+                    <button class="text-gray-600 hover:text-gray-900 rename-btn" data-id="${file.id}">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${file.id}">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          } else {
+            fileCard.innerHTML = `
+              <div class="p-6 flex items-center">
+                <div class="flex-shrink-0 bg-gray-100 rounded-md p-3">
+                  <i class="fas fa-file-alt text-gray-500 text-2xl"></i>
+                </div>
+                <div class="ml-4 flex-1 min-w-0">
+                  <h3 class="text-sm font-medium text-gray-900 truncate" title="${file.name}">${file.name}</h3>
+                  <p class="text-xs text-gray-500 mt-1">${file.size} • ${file.date}</p>
+                </div>
+                <div class="flex space-x-2">
+                  <button class="text-blue-600 hover:text-blue-900 download-btn" data-id="${file.id}">
+                    <i class="fas fa-download"></i>
+                  </button>
+                  <button class="text-gray-600 hover:text-gray-900 rename-btn" data-id="${file.id}">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${file.id}">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+          
+          elements.filesGrid.appendChild(fileCard);
+        });
+        
+        // Add event listeners
+        document.querySelectorAll('.download-btn').forEach(btn => {
+          btn.addEventListener('click', () => downloadFile(btn.dataset.id));
+        });
+        
+        document.querySelectorAll('.rename-btn').forEach(btn => {
+          btn.addEventListener('click', () => showRenameModal(btn.dataset.id));
+        });
+        
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', () => showDeleteModal(btn.dataset.id));
+        });
+      }
+    }
+    
+    // File Actions
+    function downloadFile(fileId) {
+      const file = appState.filesList.find(f => f.id === parseInt(fileId));
+      
+      if (!file) return;
+      
+      // In a real app, this would check if master password session has expired
+      // For prototype, we'll just simulate the download
+      
+      Swal.fire({
+        title: 'Downloading...',
+        html: 'Decrypting and preparing your file',
+        timerProgressBar: true,
+        didOpen: () => {
+          Swal.showLoading();
+          
+          // Simulate download process
+          setTimeout(() => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Download Complete',
+              text: `Successfully downloaded ${file.name}`,
+              confirmButtonColor: '#3b82f6'
+            });
+          }, 2000);
+        }
+      });
+    }
+    
+    function showRenameModal(fileId) {
+      const file = appState.filesList.find(f => f.id === parseInt(fileId));
+      
+      if (!file) return;
+      
+      // Set up rename modal
+      elements.fileActionTitle.textContent = 'Rename File';
+      elements.fileActionDescription.textContent = `Rename ${file.name}`;
+      elements.renameFileContainer.classList.remove('hidden');
+      elements.deleteFileContainer.classList.add('hidden');
+      elements.newFilename.value = file.name;
+      
+      appState.currentFileAction = 'rename';
+      appState.currentFileId = fileId;
+      
+      elements.fileActionsModal.classList.remove('hidden');
+    }
+    
+    function showDeleteModal(fileId) {
+      const file = appState.filesList.find(f => f.id === parseInt(fileId));
+      
+      if (!file) return;
+      
+      // Set up delete modal
+      elements.fileActionTitle.textContent = 'Delete File';
+      elements.fileActionDescription.textContent = `Are you sure you want to delete ${file.name}?`;
+      elements.renameFileContainer.classList.add('hidden');
+      elements.deleteFileContainer.classList.remove('hidden');
+      
+      appState.currentFileAction = 'delete';
+      appState.currentFileId = fileId;
+      
+      elements.fileActionsModal.classList.remove('hidden');
+    }
+    
+    function confirmFileAction() {
+      const fileId = appState.currentFileId;
+      const file = appState.filesList.find(f => f.id === parseInt(fileId));
+      
+      if (!file) {
+        elements.fileActionsModal.classList.add('hidden');
+        return;
+      }
+      
+      if (appState.currentFileAction === 'rename') {
+        const newName = elements.newFilename.value;
+        
+        if (!newName) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Filename cannot be empty',
+            confirmButtonColor: '#3b82f6'
+          });
+          return;
+        }
+        
+        // In a real app, this would call the Rename File Loop API
+        // For prototype, we'll just update the UI
+        
+        Swal.fire({
+          title: 'Renaming...',
+          html: 'Updating file information',
+          timerProgressBar: true,
+          didOpen: () => {
+            Swal.showLoading();
+            
+            // Simulate rename process
+            setTimeout(() => {
+              // Update file in state
+              file.name = newName;
+              
+              // Close modal and refresh the UI
+              elements.fileActionsModal.classList.add('hidden');
+              loadFiles();
+              
+              Swal.fire({
+                icon: 'success',
+                title: 'File Renamed',
+                text: 'The file has been renamed successfully',
+                confirmButtonColor: '#3b82f6'
+              });
+            }, 1000);
+          }
+        });
+        
+      } else if (appState.currentFileAction === 'delete') {
+        // In a real app, this would call the Delete File Loop API
+        // For prototype, we'll just update the UI
+        
+        Swal.fire({
+          title: 'Deleting...',
+          html: 'Removing file from storage',
+          timerProgressBar: true,
+          didOpen: () => {
+            Swal.showLoading();
+            
+            // Simulate delete process
+            setTimeout(() => {
+              // Remove file from state
+              appState.filesList = appState.filesList.filter(f => f.id !== parseInt(fileId));
+              
+              // Close modal and refresh the UI
+              elements.fileActionsModal.classList.add('hidden');
+              loadFiles();
+              
+              Swal.fire({
+                icon: 'success',
+                title: 'File Deleted',
+                text: 'The file has been permanently deleted',
+                confirmButtonColor: '#3b82f6'
+              });
+            }, 1000);
+          }
+        });
+      }
+    }
+    
+    // Upload Functions
+    function toggleUploadZone() {
+      if (elements.uploadZone.classList.contains('hidden')) {
+        elements.uploadZone.classList.remove('hidden');
+        elements.uploadButton.innerHTML = '<i class="fas fa-times mr-2"></i> Cancel Upload';
+      } else {
+        elements.uploadZone.classList.add('hidden');
+        elements.uploadButton.innerHTML = '<i class="fas fa-cloud-upload-alt mr-2"></i> Upload Files';
+      }
+    }
+    
+    function handleFileSelection() {
+      if (elements.fileInput.files.length > 0) {
+        handleFileUpload(elements.fileInput.files);
+      }
+    }
+    
+    function handleFileUpload(files) {
+      Swal.fire({
+        title: 'Encrypting & Uploading...',
+        html: `
+          <div class="mb-3">Encrypting files with your master password</div>
+          <div class="w-full bg-gray-200 rounded-full h-2.5 mb-4 dark:bg-gray-700">
+            <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+          </div>
+          <div id="upload-status">Preparing...</div>
+        `,
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        willOpen: () => {
+          const fileArray = Array.from(files);
+          
+          // Simulate encryption and upload process
+          let progress = 0;
+          const progressBar = document.getElementById('progress-bar');
+          const uploadStatus = document.getElementById('upload-status');
+          
+          const interval = setInterval(() => {
+            progress += Math.floor(Math.random() * 10) + 1;
+            if (progress > 100) progress = 100;
+            
+            progressBar.style.width = `${progress}%`;
+            
+            if (progress < 50) {
+              uploadStatus.textContent = `Encrypting ${fileArray.length} file(s)...`;
+            } else if (progress < 90) {
+              uploadStatus.textContent = 'Uploading encrypted files...';
+            } else {
+              uploadStatus.textContent = 'Finalizing upload...';
+            }
+            
+            if (progress === 100) {
+              clearInterval(interval);
+              setTimeout(() => {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Upload Complete',
+                  text: `${fileArray.length} file(s) uploaded successfully`,
+                  confirmButtonColor: '#3b82f6'
+                }).then(() => {
+                  toggleUploadZone();
+                  loadFiles();
+                  elements.fileInput.value = '';
+                });
+              }, 500);
+            }
+          }, 200);
+        }
+      });
+    }
+    
+    // User Administration
+    function handleAddUser(e) {
+      e.preventDefault();
+      
+      const username = document.getElementById('new-username').value;
+      const password = document.getElementById('new-password').value;
+      const role = document.getElementById('new-role').value;
+      
+      if (!username || !password) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Username and password are required',
+          confirmButtonColor: '#3b82f6'
+        });
+        return;
+      }
+      
+      // In a real app, this would call the Add User API
+      // For prototype, we'll just update the UI
+      
+      Swal.fire({
+        title: 'Adding User...',
+        timerProgressBar: true,
+        didOpen: () => {
+          Swal.showLoading();
+          
+          // Simulate adding user
+          setTimeout(() => {
+            // Add user to table
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">${username}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${role === 'admin' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}">${role}</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                Just now
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <button class="text-red-600 hover:text-red-900 delete-user-btn">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            `;
+            
+            elements.userList.appendChild(newRow);
+            
+            // Clear form
+            document.getElementById('new-username').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('new-role').value = 'user';
+            
+            // Add delete event listener
+            newRow.querySelector('.delete-user-btn').addEventListener('click', function() {
+              deleteUser(this.closest('tr'));
+            });
+            
+            Swal.fire({
+              icon: 'success',
+              title: 'User Added',
+              text: `User ${username} has been added successfully`,
+              confirmButtonColor: '#3b82f6'
+            });
+          }, 1000);
+        }
+      });
+    }
+    
+    function deleteUser(userRow) {
+      const username = userRow.querySelector('.text-sm.text-gray-900').textContent;
+      
+      Swal.fire({
+        title: 'Confirm Deletion',
+        text: `Are you sure you want to delete user ${username}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, delete user'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // In a real app, this would call the Delete User API
+          // For prototype, we'll just update the UI
+          
+          Swal.fire({
+            title: 'Deleting User...',
+            timerProgressBar: true,
+            didOpen: () => {
+              Swal.showLoading();
+              
+              // Simulate deleting user
+              setTimeout(() => {
+                userRow.remove();
+                
+                Swal.fire({
+                  icon: 'success',
+                  title: 'User Deleted',
+                  text: `User ${username} has been deleted successfully`,
+                  confirmButtonColor: '#3b82f6'
+                });
+              }, 1000);
+            }
+          });
+        }
+      });
+    }
+    
+    // Utility Functions
+    function switchPanel(panel) {
+      if (panel === 'files') {
+        elements.filesPanel.classList.remove('hidden');
+        elements.adminPanel.classList.add('hidden');
+        elements.filesTab.classList.add('border-blue-500', 'text-blue-600');
+        elements.filesTab.classList.remove('border-transparent', 'text-gray-500');
+        elements.adminTab.classList.add('border-transparent', 'text-gray-500');
+        elements.adminTab.classList.remove('border-blue-500', 'text-blue-600');
+      } else if (panel === 'admin') {
+        elements.filesPanel.classList.add('hidden');
+        elements.adminPanel.classList.remove('hidden');
+        elements.adminTab.classList.add('border-blue-500', 'text-blue-600');
+        elements.adminTab.classList.remove('border-transparent', 'text-gray-500');
+        elements.filesTab.classList.add('border-transparent', 'text-gray-500');
+        elements.filesTab.classList.remove('border-blue-500', 'text-blue-600');
+      }
+    }
+    
+    function handleLogout() {
+      Swal.fire({
+        title: 'Confirm Logout',
+        text: 'Are you sure you want to logout?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3b82f6',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, logout'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Reset app state
+          appState.loggedIn = false;
+          appState.isAdmin = false;
+          appState.username = '';
+          appState.masterPasswordProvided = false;
+          
+          // Reset UI
+          elements.mainApp.classList.add('hidden');
+          elements.loginScreen.classList.remove('hidden');
+          elements.adminTab.classList.add('hidden');
+          document.getElementById('username').value = '';
+          document.getElementById('password').value = '';
+          elements.masterPassword.value = '';
+        }
+      });
+    }
+    
+    function toggleThemeMenu() {
+      elements.themeMenu.classList.toggle('hidden');
+    }
+    
+    function changeTheme(theme) {
+      document.body.classList.remove('theme-blue', 'theme-green', 'theme-purple', 'theme-orange');
+      document.body.classList.add(`theme-${theme}`);
+      elements.themeMenu.classList.add('hidden');
+      appState.theme = theme;
+    }
+    
+    // Debounce function for search
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+  </script>
+</body>
+</html>
